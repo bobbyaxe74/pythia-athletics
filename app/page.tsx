@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import { ApiKeyGate } from "@/components/ApiKeyGate";
 import { SportSelector } from "@/components/SportSelector";
+import { ModelSelector } from "@/components/ModelSelector";
 import { GameCard } from "@/components/GameCard";
 import type { PredictionsResponse } from "@/lib/sports/types";
+import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
+
+const MODEL_STORAGE_KEY = "pythia_claude_model";
 
 interface Sport {
   id: string;
@@ -16,9 +20,28 @@ export default function HomePage() {
   const [oddsApiKey, setOddsApiKey] = useState<string | null>(null);
   const [sports, setSports] = useState<Sport[]>([]);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_CLAUDE_MODEL);
   const [predictions, setPredictions] = useState<PredictionsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const storedModel = window.localStorage.getItem(MODEL_STORAGE_KEY);
+      if (storedModel) setSelectedModel(storedModel);
+    } catch {
+      // localStorage unavailable — fall back to the default model.
+    }
+  }, []);
+
+  function handleModelSelect(model: string) {
+    setSelectedModel(model);
+    try {
+      window.localStorage.setItem(MODEL_STORAGE_KEY, model);
+    } catch {
+      // ignore — selection still works for this session via state
+    }
+  }
 
   useEffect(() => {
     fetch("/api/sports")
@@ -46,7 +69,7 @@ export default function HomePage() {
     fetch("/api/predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sport: selectedSport, anthropicKey, oddsApiKey }),
+      body: JSON.stringify({ sport: selectedSport, anthropicKey, oddsApiKey, model: selectedModel }),
     })
       .then(async (res) => {
         const data = await res.json();
@@ -68,7 +91,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [anthropicKey, oddsApiKey, selectedSport]);
+  }, [anthropicKey, oddsApiKey, selectedSport, selectedModel]);
 
   const keysReady = Boolean(anthropicKey && oddsApiKey);
 
@@ -99,6 +122,8 @@ export default function HomePage() {
       {sports.length > 0 && (
         <SportSelector sports={sports} selected={selectedSport} onSelect={setSelectedSport} />
       )}
+
+      <ModelSelector selected={selectedModel} onSelect={handleModelSelect} />
 
       {!keysReady && (
         <p className="status-line">

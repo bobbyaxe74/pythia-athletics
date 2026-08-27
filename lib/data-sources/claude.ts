@@ -15,13 +15,14 @@ export class InsufficientCreditsError extends Error {}
 
 export async function getPicksFromClaude(
   anthropicKey: string,
+  model: string,
   sport: SportConfig,
   fixtures: OddsApiFixture[],
 ): Promise<ClaudePick[]> {
   const client = new Anthropic({ apiKey: anthropicKey });
 
   const baseParams = {
-    model: "claude-opus-5",
+    model,
     max_tokens: 16000,
     system: PREDICTION_SYSTEM_PROMPT,
     tools: [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 5 }],

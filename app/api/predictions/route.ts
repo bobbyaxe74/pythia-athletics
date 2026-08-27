@@ -7,12 +7,14 @@ import {
   InsufficientCreditsError,
 } from "@/lib/data-sources/claude";
 import type { Prediction, PredictionsResponse } from "@/lib/sports/types";
+import { DEFAULT_CLAUDE_MODEL, isValidClaudeModel } from "@/lib/models";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const sportId = body?.sport;
   const anthropicKey = body?.anthropicKey;
   const oddsApiKey = body?.oddsApiKey;
+  const model = body?.model ?? DEFAULT_CLAUDE_MODEL;
 
   if (
     typeof sportId !== "string" ||
@@ -25,6 +27,10 @@ export async function POST(request: NextRequest) {
       { error: "sport, anthropicKey, and oddsApiKey are required" },
       { status: 400 },
     );
+  }
+
+  if (typeof model !== "string" || !isValidClaudeModel(model)) {
+    return NextResponse.json({ error: `Unknown model: ${model}` }, { status: 400 });
   }
 
   const sport = getSportConfig(sportId);
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(empty);
     }
 
-    const picks = await getPicksFromClaude(anthropicKey, sport, fixtures);
+    const picks = await getPicksFromClaude(anthropicKey, model, sport, fixtures);
     const picksById = new Map(picks.map((p) => [p.id, p]));
 
     const games: Prediction[] = fixtures.map((f) => {

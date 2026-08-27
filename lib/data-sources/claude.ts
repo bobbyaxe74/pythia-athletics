@@ -1,14 +1,23 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod/v4";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { SportConfig } from "@/lib/sports/types";
 import type { OddsApiFixture } from "@/lib/data-sources/odds-api";
 import { PREDICTION_SYSTEM_PROMPT, buildPredictionPrompt } from "@/lib/prompts/prediction-prompt";
+import { webSearchToolType } from "@/lib/models";
 
-export interface ClaudePick {
-  id: string;
-  claudePick: string;
-  confidence: "low" | "medium" | "high";
-  reasoning: string;
-}
+const PredictionsSchema = z.object({
+  games: z.array(
+    z.object({
+      id: z.string(),
+      claudePick: z.string(),
+      confidence: z.enum(["low", "medium", "high"]),
+      reasoning: z.string(),
+    }),
+  ),
+});
+
+export type ClaudePick = z.infer<typeof PredictionsSchema>["games"][number];
 
 export class InvalidAnthropicKeyError extends Error {}
 export class InsufficientCreditsError extends Error {}
@@ -25,22 +34,23 @@ export async function getPicksFromClaude(
     model,
     max_tokens: 16000,
     system: PREDICTION_SYSTEM_PROMPT,
-    tools: [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 5 }],
+    tools: [{ type: webSearchToolType(model), name: "web_search" as const, max_uses: 5 }],
+    output_config: { format: zodOutputFormat(PredictionsSchema) },
   };
 
   let messages: Anthropic.MessageParam[] = [
     { role: "user", content: buildPredictionPrompt(sport, fixtures) },
   ];
-  let response: Anthropic.Message;
 
+  let response;
   try {
-    response = await client.messages.create({ ...baseParams, messages });
+    response = await client.messages.parse({ ...baseParams, messages });
 
     // Server-side web search can pause a turn mid-search; resume by echoing
     // the paused assistant turn back until Claude finishes or refuses.
     while (response.stop_reason === "pause_turn") {
       messages = [...messages, { role: "assistant", content: response.content }];
-      response = await client.messages.create({ ...baseParams, messages });
+      response = await client.messages.parse({ ...baseParams, messages });
     }
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {
@@ -61,24 +71,9 @@ export async function getPicksFromClaude(
     throw new Error("Claude declined to generate predictions for this request");
   }
 
-  const text = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
-
-  return parsePicks(text);
-}
-
-function parsePicks(text: string): ClaudePick[] {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
-
-  const parsed = JSON.parse(cleaned);
-  if (!parsed || !Array.isArray(parsed.games)) {
-    throw new Error("Claude response did not include a games array");
+  if (!response.parsed_output) {
+    throw new Error("Claude's response did not match the expected format");
   }
-  return parsed.games as ClaudePick[];
+
+  return response.parsed_output.games;
 }

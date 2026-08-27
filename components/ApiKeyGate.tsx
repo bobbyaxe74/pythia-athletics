@@ -1,19 +1,32 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { HelpModal } from "./HelpModal";
+import type { HelpStep } from "@/lib/help-content";
 
 interface ApiKeyGateProps {
   storageKey: string;
   label: string;
   placeholder: string;
   helpText: string;
+  helpTitle: string;
+  helpSteps: HelpStep[];
   onKeyChange: (key: string | null) => void;
 }
 
-export function ApiKeyGate({ storageKey, label, placeholder, helpText, onKeyChange }: ApiKeyGateProps) {
+export function ApiKeyGate({
+  storageKey,
+  label,
+  placeholder,
+  helpText,
+  helpTitle,
+  helpSteps,
+  onKeyChange,
+}: ApiKeyGateProps) {
   const [storedKey, setStoredKey] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     try {
@@ -81,7 +94,13 @@ export function ApiKeyGate({ storageKey, label, placeholder, helpText, onKeyChan
           autoComplete="off"
         />
         <button type="submit">Connect</button>
+        <button type="button" className="secondary" onClick={() => setShowHelp(true)}>
+          Help
+        </button>
       </form>
+      {showHelp && (
+        <HelpModal title={helpTitle} steps={helpSteps} onClose={() => setShowHelp(false)} />
+      )}
     </div>
   );
 }

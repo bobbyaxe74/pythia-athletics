@@ -8,6 +8,7 @@ import { GameCard } from "@/components/GameCard";
 import type { PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
 import { buildShareText } from "@/lib/share";
+import { ANTHROPIC_KEY_HELP, ODDS_API_KEY_HELP } from "@/lib/help-content";
 
 const MODEL_STORAGE_KEY = "pythia_claude_model";
 
@@ -118,6 +119,8 @@ export default function HomePage() {
             label="Anthropic key"
             placeholder="sk-ant-..."
             helpText="Paste your Anthropic API key. It's stored only in this browser's local storage and sent directly to this app's server on each request — never saved server-side."
+            helpTitle="How to get an Anthropic API key"
+            helpSteps={ANTHROPIC_KEY_HELP}
             onKeyChange={setAnthropicKey}
           />
           <ApiKeyGate
@@ -125,6 +128,8 @@ export default function HomePage() {
             label="Odds API key"
             placeholder="The Odds API key..."
             helpText="Paste your own free key from the-odds-api.com to fetch this week's fixtures and odds. Also stored only in this browser."
+            helpTitle="How to get an Odds API key"
+            helpSteps={ODDS_API_KEY_HELP}
             onKeyChange={setOddsApiKey}
           />
         </div>

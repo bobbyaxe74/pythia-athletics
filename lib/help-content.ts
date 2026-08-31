@@ -25,6 +25,29 @@ export const ANTHROPIC_KEY_HELP: HelpStep[] = [
   },
 ];
 
+export const STATS_API_KEY_HELP: HelpStep[] = [
+  {
+    title: "Optional — improves head-to-head accuracy",
+    description:
+      "Without this key, Claude relies on web search to find head-to-head history, which varies in quality. With it, real head-to-head records are fetched directly and handed to Claude every time.",
+  },
+  {
+    title: "Go to dashboard.api-football.com",
+    description:
+      "Open dashboard.api-football.com (API-Sports) in a new tab and sign up for a free account — no credit card required.",
+  },
+  {
+    title: "Find your key",
+    description:
+      'Your API key is shown on your account dashboard after signing up. One key works for both football and basketball on API-Sports\' free tier (100 requests/day).',
+  },
+  {
+    title: "Paste it into Pythia Athletics",
+    description:
+      'Paste the key into the "Stats API key" field above. Stored only in your browser, same as your other keys. Leave it blank and predictions still work — Claude just falls back to web search for head-to-head history.',
+  },
+];
+
 export const ODDS_API_KEY_HELP: HelpStep[] = [
   {
     title: "Go to the-odds-api.com",

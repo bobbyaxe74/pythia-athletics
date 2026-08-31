@@ -10,6 +10,7 @@ import {
   InvalidAnthropicKeyError,
   InsufficientCreditsError,
 } from "@/lib/data-sources/claude";
+import { getHeadToHeadSummary } from "@/lib/data-sources/stats-api";
 import type { Prediction, PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL, isValidClaudeModel } from "@/lib/models";
 
@@ -18,6 +19,11 @@ export async function POST(request: NextRequest) {
   const sportId = body?.sport;
   const anthropicKey = body?.anthropicKey;
   const oddsApiKey = body?.oddsApiKey;
+  // Optional — enables structured head-to-head data. Without it, or if any
+  // individual lookup fails, Claude falls back to searching the web itself.
+  const statsApiKey = typeof body?.statsApiKey === "string" && body.statsApiKey.trim()
+    ? body.statsApiKey.trim()
+    : null;
   const model = body?.model ?? DEFAULT_CLAUDE_MODEL;
 
   if (
@@ -62,7 +68,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(empty);
     }
 
-    const picks = await getPicksFromClaude(anthropicKey, model, sport, fixtures);
+    // Best-effort structured head-to-head per fixture; getHeadToHeadSummary
+    // never throws, so a slow/failed lookup for one fixture can't take
+    // down the whole request — it just falls back to null (web search).
+    const headToHeads = await Promise.all(
+      fixtures.map((f) =>
+        getHeadToHeadSummary(statsApiKey, sport.apiSportsPath, f.homeTeam, f.awayTeam),
+      ),
+    );
+    const fixturesWithH2H = fixtures.map((f, i) => ({ ...f, headToHead: headToHeads[i] }));
+
+    const picks = await getPicksFromClaude(anthropicKey, model, sport, fixturesWithH2H);
     const picksById = new Map(picks.map((p) => [p.id, p]));
 
     const games: Prediction[] = fixtures.map((f) => {

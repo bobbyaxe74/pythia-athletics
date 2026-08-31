@@ -29,7 +29,9 @@ export function GameCard({ game }: GameCardProps) {
         <div className="odds-line">Odds-implied favorite: {game.oddsImpliedFavorite}</div>
       )}
       <div className="pick-row">
-        <strong>Pick: {game.claudePick}</strong>
+        <strong className={game.claudePick === "Draw" ? "pick-draw" : undefined}>
+          Pick: {game.claudePick}
+        </strong>
         <PredictionBadge confidence={game.confidence} />
       </div>
       <p className="reasoning">{game.reasoning}</p>

@@ -345,6 +345,11 @@ button.secondary {
   color: var(--bad);
 }
 
+.pick-draw {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .game-card .reasoning {
   margin: 10px 0 0;
   font-size: 0.85rem;

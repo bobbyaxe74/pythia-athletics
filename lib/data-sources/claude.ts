@@ -2,8 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod/v4";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { SportConfig } from "@/lib/sports/types";
-import type { OddsApiFixture } from "@/lib/data-sources/odds-api";
-import { PREDICTION_SYSTEM_PROMPT, buildPredictionPrompt } from "@/lib/prompts/prediction-prompt";
+import {
+  PREDICTION_SYSTEM_PROMPT,
+  buildPredictionPrompt,
+  type FixtureWithHeadToHead,
+} from "@/lib/prompts/prediction-prompt";
 import { webSearchToolType } from "@/lib/models";
 
 const PredictionsSchema = z.object({
@@ -26,7 +29,7 @@ export async function getPicksFromClaude(
   anthropicKey: string,
   model: string,
   sport: SportConfig,
-  fixtures: OddsApiFixture[],
+  fixtures: FixtureWithHeadToHead[],
 ): Promise<ClaudePick[]> {
   const client = new Anthropic({ apiKey: anthropicKey });
 
@@ -75,5 +78,8 @@ export async function getPicksFromClaude(
     throw new Error("Claude's response did not match the expected format");
   }
 
-  return response.parsed_output.games;
+  return response.parsed_output.games.map((game) => ({
+    ...game,
+    claudePick: game.claudePick.trim().toLowerCase() === "draw" ? "Draw" : game.claudePick,
+  }));
 }

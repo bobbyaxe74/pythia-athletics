@@ -9,7 +9,7 @@ import { GameCard } from "@/components/GameCard";
 import type { PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
 import { buildShareText } from "@/lib/share";
-import { ANTHROPIC_KEY_HELP, ODDS_API_KEY_HELP } from "@/lib/help-content";
+import { ANTHROPIC_KEY_HELP, ODDS_API_KEY_HELP, STATS_API_KEY_HELP } from "@/lib/help-content";
 
 const MODEL_STORAGE_KEY = "pythia_claude_model";
 
@@ -21,6 +21,7 @@ interface Sport {
 export default function HomePage() {
   const [anthropicKey, setAnthropicKey] = useState<string | null>(null);
   const [oddsApiKey, setOddsApiKey] = useState<string | null>(null);
+  const [statsApiKey, setStatsApiKey] = useState<string | null>(null);
   const [sports, setSports] = useState<Sport[]>([]);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_CLAUDE_MODEL);
@@ -92,6 +93,7 @@ export default function HomePage() {
           sport: selectedSport,
           anthropicKey,
           oddsApiKey,
+          statsApiKey,
           model: selectedModel,
         }),
       });
@@ -149,6 +151,15 @@ export default function HomePage() {
             helpTitle="How to get an Odds API key"
             helpSteps={ODDS_API_KEY_HELP}
             onKeyChange={setOddsApiKey}
+          />
+          <ApiKeyGate
+            storageKey="pythia_stats_api_key"
+            label="Stats API key (optional)"
+            placeholder="API-Sports key..."
+            helpText="Optional. Paste a free API-Sports key to give Claude real head-to-head history instead of relying on web search for it. Predictions still work without this — it just falls back to search."
+            helpTitle="How to get a Stats API key"
+            helpSteps={STATS_API_KEY_HELP}
+            onKeyChange={setStatsApiKey}
           />
         </div>
       </section>

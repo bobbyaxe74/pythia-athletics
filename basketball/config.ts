@@ -5,4 +5,5 @@ export const basketballConfig: SportConfig = {
   label: "Basketball (NBA)",
   oddsApiSportKeys: ["basketball_nba"],
   weekWindowDays: 7,
+  apiSportsPath: "basketball",
 };

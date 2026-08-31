@@ -16,6 +16,14 @@ export interface SportConfig {
    * NBA) should leave this unset.
    */
   oneFixturePerTeam?: boolean;
+  /**
+   * API-Sports (api-sports.io) sport path used to fetch structured
+   * head-to-head history — "football" or "basketball". Both share one
+   * account/key across their sport-specific APIs. Leave unset for sports
+   * with no API-Sports coverage; head-to-head then falls back to whatever
+   * Claude's own web search turns up.
+   */
+  apiSportsPath?: "football" | "basketball";
 }
 
 export interface Prediction {

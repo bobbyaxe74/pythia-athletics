@@ -16,4 +16,5 @@ export const soccerConfig: SportConfig = {
   // days after the previous one, so a 7-day window can span two rounds and
   // show the same team twice. Keep only each team's earliest match.
   oneFixturePerTeam: true,
+  apiSportsPath: "football",
 };

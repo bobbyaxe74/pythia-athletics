@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSportConfig } from "@/lib/sports/registry";
-import { fetchFixturesForSport, InvalidOddsApiKeyError } from "@/lib/data-sources/odds-api";
+import {
+  fetchFixturesForSport,
+  keepEarliestFixturePerTeam,
+  InvalidOddsApiKeyError,
+} from "@/lib/data-sources/odds-api";
 import {
   getPicksFromClaude,
   InvalidAnthropicKeyError,
@@ -39,11 +43,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const fixtures = await fetchFixturesForSport(
+    let fixtures = await fetchFixturesForSport(
       oddsApiKey,
       sport.oddsApiSportKeys,
       sport.weekWindowDays,
     );
+
+    if (sport.oneFixturePerTeam) {
+      fixtures = keepEarliestFixturePerTeam(fixtures);
+    }
 
     if (fixtures.length === 0) {
       const empty: PredictionsResponse = {

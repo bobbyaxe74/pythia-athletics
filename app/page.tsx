@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ApiKeyGate } from "@/components/ApiKeyGate";
 import { SportSelector } from "@/components/SportSelector";
 import { ModelSelector } from "@/components/ModelSelector";
+import { ConfidenceFilter, type ConfidenceLevel } from "@/components/ConfidenceFilter";
 import { GameCard } from "@/components/GameCard";
 import type { PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
@@ -27,6 +28,21 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confidenceFilter, setConfidenceFilter] = useState<Set<ConfidenceLevel>>(
+    new Set(["high", "medium", "low"]),
+  );
+
+  function toggleConfidence(level: ConfidenceLevel) {
+    setConfidenceFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) {
+        next.delete(level);
+      } else {
+        next.add(level);
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     try {
@@ -91,10 +107,12 @@ export default function HomePage() {
     }
   }
 
+  const filteredGames = predictions?.games.filter((g) => confidenceFilter.has(g.confidence)) ?? [];
+
   async function handleCopy() {
     if (!predictions) return;
     const sportLabel = sports.find((s) => s.id === selectedSport)?.label ?? predictions.sport;
-    const text = buildShareText(sportLabel, predictions);
+    const text = buildShareText(sportLabel, { ...predictions, games: filteredGames });
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -158,7 +176,7 @@ export default function HomePage() {
         <section className="card">
           <div className="card-header">
             <h2 className="card-title">3. Results</h2>
-            {predictions && predictions.games.length > 0 && (
+            {filteredGames.length > 0 && (
               <button type="button" className="secondary copy-button" onClick={handleCopy}>
                 {copied ? "Copied!" : "Copy for a friend"}
               </button>
@@ -174,8 +192,16 @@ export default function HomePage() {
           )}
 
           {predictions && predictions.games.length > 0 && (
+            <ConfidenceFilter selected={confidenceFilter} onToggle={toggleConfidence} />
+          )}
+
+          {predictions && predictions.games.length > 0 && filteredGames.length === 0 && (
+            <p className="status-line">No games match the selected confidence levels.</p>
+          )}
+
+          {filteredGames.length > 0 && (
             <div className="games-list">
-              {predictions.games.map((game) => (
+              {filteredGames.map((game) => (
                 <GameCard key={game.id} game={game} />
               ))}
             </div>

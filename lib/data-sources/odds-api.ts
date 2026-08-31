@@ -101,3 +101,25 @@ export async function fetchFixturesForSport(
     .flat()
     .sort((a, b) => new Date(a.commenceTime).getTime() - new Date(b.commenceTime).getTime());
 }
+
+/**
+ * Keeps only the chronologically earliest fixture for each team, dropping
+ * any later fixture where either team has already appeared. Assumes
+ * `fixtures` is already sorted ascending by kickoff time (as returned by
+ * `fetchFixturesForSport`).
+ */
+export function keepEarliestFixturePerTeam(fixtures: OddsApiFixture[]): OddsApiFixture[] {
+  const seenTeams = new Set<string>();
+  const kept: OddsApiFixture[] = [];
+
+  for (const fixture of fixtures) {
+    if (seenTeams.has(fixture.homeTeam) || seenTeams.has(fixture.awayTeam)) {
+      continue;
+    }
+    seenTeams.add(fixture.homeTeam);
+    seenTeams.add(fixture.awayTeam);
+    kept.push(fixture);
+  }
+
+  return kept;
+}

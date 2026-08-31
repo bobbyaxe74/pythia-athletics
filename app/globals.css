@@ -239,6 +239,40 @@ button.secondary {
   color: var(--text-muted);
 }
 
+/* Confidence filter */
+.confidence-filter {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.confidence-toggle {
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+
+.confidence-toggle.high.active {
+  background: rgba(53, 201, 143, 0.15);
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.confidence-toggle.medium.active {
+  background: rgba(224, 161, 58, 0.15);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.confidence-toggle.low.active {
+  background: rgba(224, 84, 106, 0.15);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
 /* Games */
 .games-list {
   display: flex;

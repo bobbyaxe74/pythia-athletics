@@ -367,6 +367,26 @@ button.secondary {
   color: var(--bad);
 }
 
+.loading-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.loading-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--accent);
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 /* Help modal */
 .modal-overlay {
   position: fixed;

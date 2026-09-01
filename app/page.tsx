@@ -6,6 +6,7 @@ import { SportSelector } from "@/components/SportSelector";
 import { ModelSelector } from "@/components/ModelSelector";
 import { ConfidenceFilter, type ConfidenceLevel } from "@/components/ConfidenceFilter";
 import { GameCard } from "@/components/GameCard";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 import type { PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
 import { buildShareText } from "@/lib/share";
@@ -194,7 +195,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {loading && <p className="status-line">Fetching this week&apos;s games and asking Claude&hellip;</p>}
+          {loading && <LoadingIndicator />}
 
           {error && <p className="status-line error">{error}</p>}
 

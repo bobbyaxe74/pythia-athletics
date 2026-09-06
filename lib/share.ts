@@ -20,5 +20,5 @@ export function buildShareText(sportLabel: string, predictions: PredictionsRespo
       `${game.homeTeam} vs ${game.awayTeam} (${formatKickoff(game.kickoff)})\n→ ${game.claudePick} (${game.confidence} confidence)`,
   );
 
-  return [header, "", ...lines].join("\n");
+  return [header, "", lines.join("\n\n")].join("\n");
 }

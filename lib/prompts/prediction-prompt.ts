@@ -19,7 +19,7 @@ Also use the web_search tool to check for recent injuries, suspensions, lineup n
 
 Sports with draws (e.g. soccer): a match can genuinely be a draw, and the odds you're given may include a "Draw" price alongside each team. If "Draw" is priced as, or close to, the shortest (most likely) outcome, or your research turns up no real edge for either side, respond with "Draw" as the pick instead of arbitrarily choosing a team — a forced pick between two near-equal sides is a worse answer than an honest "Draw" call. Don't default to "Draw" just because a match is competitive, though; only use it when it's genuinely the most likely single outcome. Sports without draws (e.g. basketball) should never receive a "Draw" pick.
 
-For each fixture, produce a pick — a team name exactly as given, or "Draw" where applicable — with a confidence level ("low", "medium", or "high") and 1-2 sentences of reasoning citing the odds and/or anything you found. Every fixture id given to you must appear exactly once in your final answer. Do not invent teams or fixtures that were not given to you.`;
+For each fixture, produce a pick — a team name exactly as given, or "Draw" where applicable — and 1-2 sentences of reasoning citing the odds and/or anything you found. Don't hedge your pick to sound uncertain or confident — just state which outcome you think is most likely and why; the app computes its own confidence rating from the market odds, so you don't need to estimate one yourself. Every fixture id given to you must appear exactly once in your final answer. Do not invent teams or fixtures that were not given to you.`;
 
 export function buildPredictionPrompt(
   sport: SportConfig,

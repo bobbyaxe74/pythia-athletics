@@ -3,6 +3,7 @@ import { getSportConfig } from "@/lib/sports/registry";
 import {
   fetchFixturesForSport,
   keepEarliestFixturePerTeam,
+  computeConfidenceFromOdds,
   InvalidOddsApiKeyError,
 } from "@/lib/data-sources/odds-api";
 import {
@@ -83,14 +84,15 @@ export async function POST(request: NextRequest) {
 
     const games: Prediction[] = fixtures.map((f) => {
       const pick = picksById.get(f.id);
+      const claudePick = pick?.claudePick ?? f.favorite ?? f.homeTeam;
       return {
         id: f.id,
         homeTeam: f.homeTeam,
         awayTeam: f.awayTeam,
         kickoff: f.commenceTime,
         oddsImpliedFavorite: f.favorite,
-        claudePick: pick?.claudePick ?? f.favorite ?? f.homeTeam,
-        confidence: pick?.confidence ?? "low",
+        claudePick,
+        confidence: computeConfidenceFromOdds(f.oddsSummary, claudePick),
         reasoning:
           pick?.reasoning ??
           "Claude did not return a pick for this fixture; defaulting to the odds-implied favorite.",

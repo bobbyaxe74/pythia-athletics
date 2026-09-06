@@ -7,10 +7,12 @@ import { ModelSelector } from "@/components/ModelSelector";
 import { ConfidenceFilter, type ConfidenceLevel } from "@/components/ConfidenceFilter";
 import { GameCard } from "@/components/GameCard";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { HistoryPanel } from "@/components/HistoryPanel";
 import type { PredictionsResponse } from "@/lib/sports/types";
 import { DEFAULT_CLAUDE_MODEL } from "@/lib/models";
 import { buildShareText } from "@/lib/share";
 import { ANTHROPIC_KEY_HELP, ODDS_API_KEY_HELP, STATS_API_KEY_HELP } from "@/lib/help-content";
+import { loadHistory, saveRun, applyResults, type HistoryRun } from "@/lib/history";
 
 const MODEL_STORAGE_KEY = "pythia_claude_model";
 
@@ -33,6 +35,13 @@ export default function HomePage() {
   const [confidenceFilter, setConfidenceFilter] = useState<Set<ConfidenceLevel>>(
     new Set(["high", "medium", "low"]),
   );
+  const [historyRuns, setHistoryRuns] = useState<HistoryRun[]>([]);
+  const [checkingRunId, setCheckingRunId] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setHistoryRuns(loadHistory());
+  }, []);
 
   function toggleConfidence(level: ConfidenceLevel) {
     setConfidenceFilter((prev) => {
@@ -102,11 +111,42 @@ export default function HomePage() {
       if (!res.ok) {
         throw new Error(data.error ?? "Failed to load predictions");
       }
-      setPredictions(data as PredictionsResponse);
+      const typedData = data as PredictionsResponse;
+      setPredictions(typedData);
+
+      if (typedData.games.length > 0) {
+        const sportLabel = sports.find((s) => s.id === selectedSport)?.label ?? typedData.sport;
+        setHistoryRuns(saveRun(sportLabel, typedData));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load predictions");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function checkResults(runId: string) {
+    const run = historyRuns.find((r) => r.id === runId);
+    if (!run || !oddsApiKey) return;
+
+    setCheckingRunId(runId);
+    setHistoryError(null);
+
+    try {
+      const res = await fetch("/api/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sport: run.sportId, oddsApiKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to fetch results");
+      }
+      setHistoryRuns(applyResults(runId, data.results));
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : "Failed to fetch results");
+    } finally {
+      setCheckingRunId(null);
     }
   }
 
@@ -220,6 +260,20 @@ export default function HomePage() {
           )}
         </section>
       )}
+
+      <section className="card">
+        <h2 className="card-title">4. Track record</h2>
+        {historyError && <p className="status-line error">{historyError}</p>}
+        <HistoryPanel
+          runs={historyRuns}
+          oddsApiKey={oddsApiKey}
+          checkingRunId={checkingRunId}
+          onCheckResults={checkResults}
+        />
+        {!oddsApiKey && historyRuns.length > 0 && (
+          <p className="status-line">Connect your Odds API key above to check results.</p>
+        )}
+      </section>
     </main>
   );
 }

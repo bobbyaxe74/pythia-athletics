@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 const LINK_PATTERNS: { match: string; href: string }[] = [
   { match: "console.anthropic.com", href: "https://console.anthropic.com" },
   { match: "the-odds-api.com", href: "https://the-odds-api.com" },
+  { match: "dashboard.api-football.com", href: "https://dashboard.api-football.com" },
 ];
 
 /** Turns known domain mentions in plain text into clickable links. */

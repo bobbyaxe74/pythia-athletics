@@ -387,6 +387,114 @@ button.secondary {
   }
 }
 
+/* Track record / history */
+.history-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.history-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-runs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-run {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+
+.history-run-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.history-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-run-actions button {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}
+
+.history-run-score {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.history-game-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-game {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.history-game-matchup {
+  flex: 1;
+}
+
+.history-game-outcome {
+  width: 16px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.history-game.correct .history-game-outcome {
+  color: var(--good);
+}
+
+.history-game.incorrect .history-game-outcome {
+  color: var(--bad);
+}
+
+.history-game.unresolved .history-game-outcome {
+  color: var(--text-muted);
+}
+
 /* Help modal */
 .modal-overlay {
   position: fixed;

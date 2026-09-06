@@ -9,12 +9,17 @@ import {
 } from "@/lib/prompts/prediction-prompt";
 import { webSearchToolType } from "@/lib/models";
 
+// No "confidence" field here on purpose — Claude's self-reported
+// confidence turned out to carry no real signal (a whole week of
+// predictions came back 100% "high confidence" at a 50% hit rate). The
+// app now computes confidence itself from the odds in the predictions
+// route (see computeConfidenceFromOdds), so it's consistent and tied to
+// something objective.
 const PredictionsSchema = z.object({
   games: z.array(
     z.object({
       id: z.string(),
       claudePick: z.string(),
-      confidence: z.enum(["low", "medium", "high"]),
       reasoning: z.string(),
     }),
   ),

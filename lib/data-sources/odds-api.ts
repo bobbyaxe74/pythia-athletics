@@ -85,6 +85,40 @@ async function fetchSportOdds(
   return data.map((game) => toFixture(sportKey, game));
 }
 
+// Thresholds on the no-vig (de-margined) implied probability of the
+// outcome actually picked. Anchoring confidence to the market instead of
+// letting Claude self-report it means the label is consistent and
+// meaningful every week — a pick against the market favorite (a real
+// upset call) is correctly labeled lower confidence, regardless of how
+// sure Claude's own wording sounds.
+const HIGH_CONFIDENCE_THRESHOLD = 0.7;
+const MEDIUM_CONFIDENCE_THRESHOLD = 0.55;
+
+/**
+ * Confidence for `pick`, derived from the fixture's own odds — not from
+ * Claude. Removes the bookmaker's overround (vig) by normalizing each
+ * outcome's raw implied probability (1/price) against the sum across all
+ * outcomes, then buckets the picked outcome's share. Falls back to "low"
+ * when there's no odds data or the pick can't be matched to an outcome
+ * (e.g. odds not posted yet) — conservative default, not a guess.
+ */
+export function computeConfidenceFromOdds(
+  oddsSummary: { team: string; price: number }[] | null,
+  pick: string,
+): "low" | "medium" | "high" {
+  if (!oddsSummary || oddsSummary.length === 0) return "low";
+
+  const picked = oddsSummary.find((o) => o.team.toLowerCase() === pick.toLowerCase());
+  if (!picked) return "low";
+
+  const totalImpliedProbability = oddsSummary.reduce((sum, o) => sum + 1 / o.price, 0);
+  const normalizedProbability = 1 / picked.price / totalImpliedProbability;
+
+  if (normalizedProbability >= HIGH_CONFIDENCE_THRESHOLD) return "high";
+  if (normalizedProbability >= MEDIUM_CONFIDENCE_THRESHOLD) return "medium";
+  return "low";
+}
+
 export async function fetchFixturesForSport(
   oddsApiKey: string,
   sportKeys: string[],
@@ -122,4 +156,89 @@ export function keepEarliestFixturePerTeam(fixtures: OddsApiFixture[]): OddsApiF
   }
 
   return kept;
+}
+
+export interface FixtureResult {
+  id: string;
+  completed: boolean;
+  /** "home" | "away" | "draw", or null if not completed / scores missing. */
+  winner: "home" | "away" | "draw" | null;
+}
+
+interface RawScoreEntry {
+  name: string;
+  score: string;
+}
+
+interface RawScoreGame {
+  id: string;
+  completed: boolean;
+  home_team: string;
+  away_team: string;
+  scores: RawScoreEntry[] | null;
+}
+
+function toFixtureResult(game: RawScoreGame): FixtureResult {
+  if (!game.completed || !game.scores) {
+    return { id: game.id, completed: game.completed, winner: null };
+  }
+
+  const home = game.scores.find((s) => s.name === game.home_team);
+  const away = game.scores.find((s) => s.name === game.away_team);
+  if (!home || !away) {
+    return { id: game.id, completed: game.completed, winner: null };
+  }
+
+  const homeScore = Number(home.score);
+  const awayScore = Number(away.score);
+  if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) {
+    return { id: game.id, completed: game.completed, winner: null };
+  }
+
+  const winner =
+    homeScore === awayScore ? "draw" : homeScore > awayScore ? "home" : "away";
+  return { id: game.id, completed: true, winner };
+}
+
+async function fetchSportScores(
+  oddsApiKey: string,
+  sportKey: string,
+  daysFrom: number,
+): Promise<FixtureResult[]> {
+  const params = new URLSearchParams({
+    apiKey: oddsApiKey,
+    daysFrom: String(daysFrom),
+    dateFormat: "iso",
+  });
+
+  const res = await fetch(`${ODDS_API_BASE}/sports/${sportKey}/scores/?${params}`, {
+    next: { revalidate: 300 },
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    if (res.status === 401) {
+      throw new InvalidOddsApiKeyError("Invalid Odds API key");
+    }
+    throw new Error(`The Odds API scores request failed for ${sportKey}: ${res.status} ${body}`);
+  }
+
+  const data: RawScoreGame[] = await res.json();
+  return data.map(toFixtureResult);
+}
+
+/**
+ * Completed-game results for the last `daysFrom` days (The Odds API caps
+ * this at 3 on most plans) across every sport key for a sport. Used to
+ * auto-grade a previously saved run of predictions against real outcomes.
+ */
+export async function fetchResultsForSport(
+  oddsApiKey: string,
+  sportKeys: string[],
+  daysFrom = 3,
+): Promise<FixtureResult[]> {
+  const results = await Promise.all(
+    sportKeys.map((key) => fetchSportScores(oddsApiKey, key, daysFrom)),
+  );
+  return results.flat();
 }
